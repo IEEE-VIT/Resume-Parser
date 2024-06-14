@@ -11,6 +11,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.svm import SVC
 from pypdf import PdfReader
 import pickle
+from webscraping import *
 
 nltk.download('stopwords')
 nltk.download('punkt')
@@ -81,9 +82,11 @@ def prediction(pdf_path, vectorizer):
             pred = clf.predict(text_vectorized)
             category = le.inverse_transform(pred)
             print(f"Predicted Category: {category[0]}")
+            j=extract(category)
+            print(transform(j))
     except FileNotFoundError:
         print(f"Error: Could not find file '{pdf_path}'.")
 
 
-pdf_path = r"C:\Users\neash\Desktop\eashwar\N-Eashwar-Resume-1.pdf"
+pdf_path ='''enter your resume's path'''
 prediction(pdf_path, vectorizer)
