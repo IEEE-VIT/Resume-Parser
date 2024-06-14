@@ -20,5 +20,8 @@ cd Resume-Parser
 pip install -r requirements.txt
 
 ```
-##Contributing
-Fork the repository, create a new branch, make your changes, and create a pull request.
+## Contributing
+- Fork the repository
+- create a new branch
+- make your changes
+- and create a pull request.
