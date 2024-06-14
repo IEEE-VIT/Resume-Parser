@@ -3,11 +3,11 @@
 This project classifies resumes into predefined categories using natural language processing (NLP) and machine learning techniques. It also includes a web scraping functionality to gather additional information based on the classified category.
 
 ## Features
--Data Cleaning and Preprocessing
--TF-IDF Vectorization
--Model Training with SVM
--PDF Resume Parsing
--Web Scraping
+- Data Cleaning and Preprocessing
+- TF-IDF Vectorization
+- Model Training with SVM
+- PDF Resume Parsing
+- Web Scraping
 ## Installation
 ### Prerequisites
 -Python 3.6+
