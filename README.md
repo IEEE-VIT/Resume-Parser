@@ -25,3 +25,6 @@ pip install -r requirements.txt
 - create a new branch
 - make your changes
 - and create a pull request.
+
+## Project Contributor
+This project was made by N.Eashwar @eashwar05 
