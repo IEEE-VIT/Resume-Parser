@@ -10,8 +10,8 @@ This project classifies resumes into predefined categories using natural languag
 - Web Scraping
 ## Installation
 ### Prerequisites
--Python 3.6+
--pip
+- Python 3.6+
+- pip
 ## Setup
 ```
 
