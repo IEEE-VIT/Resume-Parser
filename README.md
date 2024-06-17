@@ -27,4 +27,4 @@ pip install -r requirements.txt
 - and create a pull request.
 
 ## Project Contributor
-This project was made by N.Eashwar
+This project was made by @eashwar05
