@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import re
 import nltk
 from nltk.corpus import stopwords
@@ -13,11 +14,7 @@ from sklearn.metrics import recall_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import f1_score
 from sklearn.svm import SVC
-from sklearn.neighbors import KNeighborsClassifier
-from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
-from pdfminer.converter import TextConverter
-from pdfminer.layout import LAParams
-from pdfminer.pdfpage import PDFPage
+from sklearn.ensemble import RandomForestClassifier
 from pdfminer.high_level import extract_text
 from io import StringIO
 import pickle
@@ -131,7 +128,7 @@ y = le.fit_transform(df_filtered['Category'])
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-clf = SVC()
+clf = RandomForestClassifier()
 clf.fit(X_train, y_train)
 y_pred = clf.predict(X_test)
 
@@ -161,8 +158,15 @@ def prediction(pdf_path, vectorizer):
     text_vectorized = vectorizer.transform([text_skills_str])
     
     prediction = clf.predict(text_vectorized)
+    print(prediction)
     predicted_category = le.inverse_transform(prediction)
     print('The category is: ',predicted_category)
+    if isinstance(predicted_category, (list, np.ndarray)):
+        for category in predicted_category:
+            transform(category)
+    else:
+        transform(predicted_category)
+
 
 # Example usage
 pdf_path = r"C:\Users\neash\Downloads\Resume_Rohith_Parahmesh.pdf"
