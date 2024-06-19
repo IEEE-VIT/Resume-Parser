@@ -25,10 +25,7 @@ nltk.download('stopwords')
 nltk.download('punkt')
 nltk.download('wordnet')
 
-df1  = pd.read_csv('UpdatedResumeDataSet.csv')
-df2 = pd.read_csv('Resume.csv')
-merge = [df1, df2]
-df = pd.concat(merge)
+df   = pd.read_csv('UpdatedResumeDataSet.csv')
 
 def cleaning(text):
     text = re.sub(r"(https?://[^\s]+)", "", text)
@@ -169,6 +166,6 @@ def prediction(pdf_path, vectorizer):
 
 
 # Example usage
-pdf_path = '''example path'''
+pdf_path = r"C:\Users\neash\Downloads\VarunSudhirFinalResume (5) (1).pdf"
 print(prediction(pdf_path, tfidf))
 #print(f'Predicted Category: {predicted_category}')
