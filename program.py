@@ -169,6 +169,6 @@ def prediction(pdf_path, vectorizer):
 
 
 # Example usage
-pdf_path = r"C:\Users\neash\Downloads\Resume_Rohith_Parahmesh.pdf"
+pdf_path = '''example path'''
 print(prediction(pdf_path, tfidf))
 #print(f'Predicted Category: {predicted_category}')
