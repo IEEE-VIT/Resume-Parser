@@ -14,6 +14,7 @@ from sklearn.metrics import recall_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import f1_score
 from sklearn.svm import SVC
+from sklearn.multiclass import OneVsOneClassifier
 from sklearn.ensemble import RandomForestClassifier
 from pdfminer.high_level import extract_text
 from io import StringIO
@@ -52,7 +53,7 @@ skilllist = [
     "HTML", "CSS", "React", "Angular", "Vue.js", "Node.js", "Apache", "Nginx",
     "MySQL", "Oracle", "PostgreSQL", "MongoDB", "Cassandra", "Redis",
     "AWS", "Azure", "GCP","Bitcoin","Ethereum","Solidity","C"
-    "Git", "version control systems", "Jenkins", "GitLab CI/CD",
+    "Git", "version control systems", "Jenkins", "GitLab CI/CD","AUTO CAD","Fanuc Series"
     "TCP/IP", "network protocols", "routing", "firewalls",
     "Network security principles", "encryption", "firewalls", "IDS",
     "Windows (Server and Desktop)", "Linux (Ubuntu, Red Hat, CentOS)", "macOS",
@@ -125,7 +126,7 @@ y = le.fit_transform(df_filtered['Category'])
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-clf = RandomForestClassifier()
+clf = OneVsOneClassifier(SVC())
 clf.fit(X_train, y_train)
 y_pred = clf.predict(X_test)
 
@@ -166,6 +167,6 @@ def prediction(pdf_path, vectorizer):
 
 
 # Example usage
-pdf_path = r"C:\Users\neash\Downloads\VarunSudhirFinalResume (5) (1).pdf"
+pdf_path = r"C:\Users\neash\Documents\N-Eashwar-Resume.pdf"
 print(prediction(pdf_path, tfidf))
-#print(f'Predicted Category: {predicted_category}')
+
