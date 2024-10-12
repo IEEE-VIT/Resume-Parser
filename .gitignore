@@ -3,8 +3,6 @@ __pycache__/
 *.pyc
 *.pyo
 
-# Ignore dataset files (optional)
-*.csv
 
 # Ignore virtual environment folders
 venv/
