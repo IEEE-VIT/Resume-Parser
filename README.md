@@ -1,4 +1,5 @@
 # Resume-Parser
+![RESUME PARSER](https://github.com/user-attachments/assets/ddc30a10-d57c-48b3-9819-996ba21e328b)
 ## Resume Parser and Job Suggester
 This project classifies resumes into predefined categories using natural language processing (NLP) and machine learning techniques. It also includes a web scraping functionality to gather additional information based on the classified category.
 
