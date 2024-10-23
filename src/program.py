@@ -12,7 +12,6 @@ import numpy as np
 import re
 import nltk
 import xgboost as xgb
-!pip install pdfminer.six
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
@@ -223,7 +222,7 @@ def prediction(pdf_path, vectorizer):
 
     text_vectorized = vectorizer.transform([text_skills_str])
 
-    prediction = clf.predict(text_vectorized)
+    prediction = rf_clf.predict(text_vectorized)
     print(prediction)
     predicted_category = le.inverse_transform(prediction)
     print('The category is: ',predicted_category)
