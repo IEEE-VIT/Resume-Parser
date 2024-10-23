@@ -28,6 +28,7 @@ from sklearn.svm import SVC
 from sklearn.multiclass import OneVsOneClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score
+from sklearn.metrics import make_scorer
 from pdfminer.high_level import extract_text
 from io import StringIO
 import pickle
@@ -164,12 +165,18 @@ def evaluate_model(y_test, y_pred):
 
 cv = 5  # Number of folds for cross-validation
 
+# Define custom scorers to handle zero division warnings
+accuracy_scorer = make_scorer(accuracy_score)
+recall_scorer = make_scorer(recall_score, average='macro', zero_division=0)
+precision_scorer = make_scorer(precision_score, average='macro', zero_division=0)
+f1_scorer = make_scorer(f1_score, average='macro', zero_division=0)
+
 # Cross-validation evaluation function
 def cross_val_evaluation(model, X, y, cv):
-    acc = np.mean(cross_val_score(model, X, y, cv=cv, scoring='accuracy'))
-    rec = np.mean(cross_val_score(model, X, y, cv=cv, scoring='recall_macro'))
-    precision = np.mean(cross_val_score(model, X, y, cv=cv, scoring='precision_macro'))
-    f1score = np.mean(cross_val_score(model, X, y, cv=cv, scoring='f1_macro'))
+    acc = np.mean(cross_val_score(model, X, y, cv=cv, scoring=accuracy_scorer))
+    rec = np.mean(cross_val_score(model, X, y, cv=cv, scoring=recall_scorer))
+    precision = np.mean(cross_val_score(model, X, y, cv=cv, scoring=precision_scorer))
+    f1score = np.mean(cross_val_score(model, X, y, cv=cv, scoring=f1_scorer))
     return acc, rec, precision, f1score
 
 # --- SVM Classifier ---
