@@ -1,4 +1,9 @@
 
+import os
+import shutil
+import subprocess
+from pathlib import Path
+
 import pandas as pd
 import numpy as np
 import re
@@ -199,9 +204,61 @@ print(f"XGBoost - Accuracy: {xgb_acc:.4f}, Recall: {xgb_rec:.4f}, Precision: {xg
 
 
 
+def extract_text_from_file(file_path):
+    file_path = str(file_path)
+    suffix = Path(file_path).suffix.lower()
+
+    if suffix == ".pdf":
+        return extract_text(file_path)
+
+    if suffix in {".txt", ".md", ".csv"}:
+        for encoding in ("utf-8-sig", "utf-16", "latin-1"):
+            try:
+                return Path(file_path).read_text(encoding=encoding)
+            except UnicodeDecodeError:
+                continue
+        return Path(file_path).read_text(encoding="utf-8", errors="ignore")
+
+    if suffix == ".docx":
+        try:
+            from docx import Document
+        except ImportError as exc:
+            raise ImportError("python-docx is required to read .docx resume files.") from exc
+
+        try:
+            document = Document(file_path)
+            return "\n".join(paragraph.text for paragraph in document.paragraphs if paragraph.text.strip())
+        except Exception as exc:
+            raise ValueError(f"Unable to read DOCX resume file: {file_path}") from exc
+
+    if suffix == ".rtf":
+        import subprocess
+        rich_text = shutil.which("unrtf")
+        if rich_text:
+            result = subprocess.run([rich_text, "--text", file_path], capture_output=True, text=True, check=False)
+            if result.returncode == 0 and result.stdout.strip():
+                return result.stdout
+
+    if suffix == ".doc":
+        antiword = shutil.which("antiword")
+        if antiword:
+            result = subprocess.run([antiword, file_path], capture_output=True, text=True, check=False)
+            if result.returncode == 0 and result.stdout.strip():
+                return result.stdout
+
+        libreoffice = shutil.which("libreoffice") or shutil.which("soffice")
+        if libreoffice:
+            output_path = Path(file_path).with_suffix(".txt")
+            subprocess.run([libreoffice, "--headless", "--convert-to", "txt:Text", "--outdir", str(output_path.parent), file_path], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if output_path.exists():
+                return output_path.read_text(encoding="utf-8", errors="ignore")
+
+    raise ValueError(f"Unsupported resume format: {suffix or Path(file_path).name}")
+
+
 # Example prediction function
-def prediction(pdf_path, vectorizer):
-    text = extract_text(pdf_path)
+def prediction(file_path, vectorizer):
+    text = extract_text_from_file(file_path)
     # Preprocess the extracted text
     cleaned_text = cleaning(text.strip())
     #print(cleaned_text)
