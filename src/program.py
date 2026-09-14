@@ -1,4 +1,9 @@
 
+import os
+import shutil
+import subprocess
+from pathlib import Path
+
 import pandas as pd
 import numpy as np
 import re
@@ -30,7 +35,12 @@ nltk.download('stopwords')
 nltk.download('punkt')
 nltk.download('wordnet')
 
-df   = pd.read_csv('UpdatedResumeDataSet.csv')
+MODEL_DIR = Path(__file__).resolve().parent
+MODEL_PATHS = {
+    'vectorizer': MODEL_DIR / 'resume_tfidf_vectorizer.pkl',
+    'classifier': MODEL_DIR / 'resume_classifier.pkl',
+    'label_encoder': MODEL_DIR / 'resume_label_encoder.pkl',
+}
 
 def cleaning(text):
     text = re.sub(r"(https?://[^\s]+)", "", text)
@@ -40,8 +50,6 @@ def cleaning(text):
     text = re.sub(r"\s+", " ", text).strip()
     return text
 
-df['cleaned'] = df['Resume'].apply(lambda x: cleaning(str(x)))
-df['cleaned'] = df['cleaned'].str.lower()
 
 def preprocess(text):
     stop_words = set(stopwords.words('english'))
@@ -199,25 +207,129 @@ print(f"XGBoost - Accuracy: {xgb_acc:.4f}, Recall: {xgb_rec:.4f}, Precision: {xg
 
 
 
-# Example prediction function
-def prediction(pdf_path, vectorizer):
-    text = extract_text(pdf_path)
-    # Preprocess the extracted text
-    cleaned_text = cleaning(text.strip())
-    #print(cleaned_text)
-    # Extract skills from preprocessed text
-    text_skills = extract_skills(cleaned_text)
+def extract_text_from_file(file_path):
+    file_path = str(file_path)
+    suffix = Path(file_path).suffix.lower()
 
-    # Join skills into a single string
+    if suffix == ".pdf":
+        return extract_text(file_path)
+
+    if suffix in {".txt", ".md", ".csv"}:
+        for encoding in ("utf-8-sig", "utf-16", "latin-1"):
+            try:
+                return Path(file_path).read_text(encoding=encoding)
+            except UnicodeDecodeError:
+                continue
+        return Path(file_path).read_text(encoding="utf-8", errors="ignore")
+
+    if suffix == ".docx":
+        try:
+            from docx import Document
+        except ImportError as exc:
+            raise ImportError("python-docx is required to read .docx resume files.") from exc
+
+        try:
+            document = Document(file_path)
+            return "\n".join(paragraph.text for paragraph in document.paragraphs if paragraph.text.strip())
+        except Exception as exc:
+            raise ValueError(f"Unable to read DOCX resume file: {file_path}") from exc
+
+    if suffix == ".rtf":
+        rich_text = shutil.which("unrtf")
+        if rich_text:
+            result = subprocess.run([rich_text, "--text", file_path], capture_output=True, text=True, check=False)
+            if result.returncode == 0 and result.stdout.strip():
+                return result.stdout
+
+    if suffix == ".doc":
+        antiword = shutil.which("antiword")
+        if antiword:
+            result = subprocess.run([antiword, file_path], capture_output=True, text=True, check=False)
+            if result.returncode == 0 and result.stdout.strip():
+                return result.stdout
+
+        libreoffice = shutil.which("libreoffice") or shutil.which("soffice")
+        if libreoffice:
+            output_path = Path(file_path).with_suffix(".txt")
+            subprocess.run([libreoffice, "--headless", "--convert-to", "txt:Text", "--outdir", str(output_path.parent), file_path], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if output_path.exists():
+                return output_path.read_text(encoding="utf-8", errors="ignore")
+
+    raise ValueError(f"Unsupported resume format: {suffix or Path(file_path).name}")
+
+
+def save_model_artifacts(vectorizer, classifier, label_encoder):
+    for path in MODEL_PATHS.values():
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(MODEL_PATHS['vectorizer'], 'wb') as file:
+        pickle.dump(vectorizer, file)
+    with open(MODEL_PATHS['classifier'], 'wb') as file:
+        pickle.dump(classifier, file)
+    with open(MODEL_PATHS['label_encoder'], 'wb') as file:
+        pickle.dump(label_encoder, file)
+
+
+def load_model_artifacts():
+    if all(path.exists() for path in MODEL_PATHS.values()):
+        with open(MODEL_PATHS['vectorizer'], 'rb') as file:
+            vectorizer = pickle.load(file)
+        with open(MODEL_PATHS['classifier'], 'rb') as file:
+            classifier = pickle.load(file)
+        with open(MODEL_PATHS['label_encoder'], 'rb') as file:
+            label_encoder = pickle.load(file)
+        return vectorizer, classifier, label_encoder
+    return None
+
+
+def train_model():
+    dataset_path = MODEL_DIR / 'UpdatedResumeDataSet.csv'
+    df = pd.read_csv(dataset_path)
+    df['cleaned'] = df['Resume'].apply(lambda x: cleaning(str(x)))
+    df['cleaned'] = df['cleaned'].str.lower()
+
+    if 'Skills' not in df.columns:
+        df['Skills'] = df['cleaned'].apply(extract_skills)
+
+    df['Skills'] = df['Skills'].apply(lambda x: ' '.join(x) if isinstance(x, list) else '')
+    df_filtered = df[df['Skills'].notnull() & df['Category'].notnull()]
+
+    tfidf = TfidfVectorizer()
+    X = tfidf.fit_transform(df_filtered['Skills'])
+
+    df['Category'] = df['Category'].fillna('Unknown')
+    le = LabelEncoder()
+    y = le.fit_transform(df_filtered['Category'])
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    rf_clf = RandomForestClassifier()
+    rf_clf.fit(X_train, y_train)
+
+    save_model_artifacts(tfidf, rf_clf, le)
+    return tfidf, rf_clf, le
+
+
+def load_or_train_model():
+    cached = load_model_artifacts()
+    if cached is not None:
+        return cached
+    return train_model()
+
+
+def prediction(file_path, vectorizer, classifier=None, label_encoder=None):
+    text = extract_text_from_file(file_path)
+    cleaned_text = cleaning(text.strip())
+    text_skills = extract_skills(cleaned_text)
     text_skills_str = ' '.join(text_skills)
     print(text_skills)
 
     text_vectorized = vectorizer.transform([text_skills_str])
-
-    prediction = rf_clf.predict(text_vectorized)
+    model = classifier if classifier is not None else rf_clf
+    prediction = model.predict(text_vectorized)
     print(prediction)
-    predicted_category = le.inverse_transform(prediction)
-    print('The category is: ',predicted_category)
+    target_encoder = label_encoder if label_encoder is not None else le
+    predicted_category = target_encoder.inverse_transform(prediction)
+    print('The category is: ', predicted_category)
     if isinstance(predicted_category, (list, np.ndarray)):
         for category in predicted_category:
             transform(category)
@@ -225,7 +337,13 @@ def prediction(pdf_path, vectorizer):
         transform(predicted_category)
 
 
+# Initialize once per process. The model is saved to disk and reused on subsequent runs.
+try:
+    tfidf, rf_clf, le = load_or_train_model()
+except Exception:
+    tfidf, rf_clf, le = train_model()
+
 # Example usage
-pdf_path = r"sample_resume.pdf"
-print(prediction(pdf_path, tfidf))
+resume_path = r"sample_resume.pdf"
+print(prediction(resume_path, tfidf, rf_clf, le))
 
