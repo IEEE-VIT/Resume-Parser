@@ -226,6 +226,11 @@ def prediction(pdf_path, vectorizer):
 
 
 # Example usage
-pdf_path = r"sample_resume.pdf"
-print(prediction(pdf_path, tfidf))
+import argparse
 
+parser = argparse.ArgumentParser(description="Resume Parser")
+parser.add_argument("pdf_path", help="Path to the resume PDF")
+
+args = parser.parse_args()
+
+print(prediction(args.pdf_path, tfidf))
