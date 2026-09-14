@@ -226,6 +226,6 @@ def prediction(pdf_path, vectorizer):
 
 
 # Example usage
-pdf_path = r"pdf-path"
+pdf_path = r"sample_resume.pdf"
 print(prediction(pdf_path, tfidf))
 
