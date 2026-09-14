@@ -28,6 +28,7 @@ from sklearn.metrics import make_scorer
 from pdfminer.high_level import extract_text
 from io import StringIO
 import pickle
+import argparse 
 from webscraping import *
 import warnings
 
@@ -283,6 +284,25 @@ def prediction(file_path, vectorizer):
 
 
 # Example usage
-pdf_path = r"sample_resume.pdf"
-print(prediction(pdf_path, tfidf))
+# Command-line usage
+parser = argparse.ArgumentParser(
+    description="Classify a resume from a PDF file."
+)
 
+parser.add_argument(
+    "resume_path",
+    help="Path to the resume PDF file"
+)
+
+args = parser.parse_args()
+pdf_path = Path(args.resume_path)
+
+if not pdf_path.is_file():
+    print(f"Error: Resume file not found: {pdf_path}")
+    raise SystemExit(1)
+
+if pdf_path.suffix.lower() != ".pdf":
+    print("Error: Please provide a PDF resume file.")
+    raise SystemExit(1)
+
+print(prediction(pdf_path, tfidf))
